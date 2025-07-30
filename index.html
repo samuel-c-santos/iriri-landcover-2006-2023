@@ -61,7 +61,7 @@
         border-radius: 0.75rem; /* Cantos arredondados para o controle de camadas */
     }
     .legend {
-        line-height: 18px;
+        line-height: 20px;
         color: #555;
     }
     .legend i {
@@ -85,6 +85,8 @@
       </button>
     </div>
   </header>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <div id="classificationControl" class="absolute top-20 left-12 bg-white p-4 rounded-lg shadow-lg z-50">
     <label class="block text-gray-700 font-semibold mb-2">Classificação:</label>
@@ -117,13 +119,18 @@
         <hr class="my-4">
         <p class="text-sm text-gray-600 mb-2">
         Desenvolvido por <strong>Samuel C. Santos</strong> – Analista Ambiental e Desenvolvedor Web.
+        <p class="text-sm text-gray-600 flex flex-wrap gap-4 items-center mt-2">
+        <a href="https://samuel-c-santos.github.io/" class="text-green-700 hover:text-green-900 flex items-center space-x-2" target="_blank">
+            <i class="fas fa-globe"></i><span>Portfólio</span>
+        </a>
+        <a href="https://www.linkedin.com/in/samuelsantos-amb/" class="text-green-700 hover:text-green-900 flex items-center space-x-2" target="_blank">
+            <i class="fab fa-linkedin"></i><span>LinkedIn</span>
+        </a>
+        <a href="https://github.com/samuel-c-santos/iriri-landcover-2006-2023" class="text-green-700 hover:text-green-900 flex items-center space-x-2" target="_blank">
+            <i class="fab fa-github"></i><span>Repositório no GitHub</span>
+        </a>
         </p>
-        <p class="text-sm text-gray-600">
-        <a href="https://samuel-c-santos.github.io/" class="text-green-700 underline" target="_blank">🌐 Portfólio</a> |
-        <a href="https://www.linkedin.com/in/samuelsantos-amb/" class="text-green-700 underline" target="_blank">💼 LinkedIn</a> |
-        <a href="https://github.com/samuel-c-santos/iriri-landcover-2006-2023" class="text-green-700 underline" target="_blank">📁 Repositório no GitHub</a>
-        </p>
-      <button id="closeModalBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+      <button id="closeModalBtn" class="mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
         Fechar
       </button>
     </div>
