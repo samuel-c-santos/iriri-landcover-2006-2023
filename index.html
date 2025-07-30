@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador de Cobertura do Solo - FLOTA Iriri</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Estilos personalizados para o mapa Leaflet e modal, sobrescrevendo Tailwind onde necessário */
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: 'Inter', sans-serif; /* Usando a fonte Inter */
+      overflow: hidden; /* Previne a rolagem do corpo */
+    }
+    #map {
+      height: calc(100vh - 64px); /* Ajusta a altura para o cabeçalho */
+      width: 100%;
+      z-index: 0; /* Garante que o mapa esteja atrás de outros elementos */
+    }
+    /* Estilos do modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.show .modal-content {
+      transform: translateY(0);
+    }
+    .leaflet-control-container .leaflet-control-attribution {
+      font-size: 0.75rem; /* Texto de atribuição menor */
+    }
+    .leaflet-control-layers {
+        border-radius: 0.75rem; /* Cantos arredondados para o controle de camadas */
+    }
+    .legend {
+        line-height: 18px;
+        color: #555;
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+        border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-green-700 text-white flex items-center justify-between p-4 shadow-md h-16">
+    <span class="text-xl font-bold flex items-center">
+      <span class="mr-2">🌍</span> Visualizador de Cobertura do Solo - FLOTA Iriri
+    </span>
+    <div class="flex items-center space-x-4">
+      <button id="aboutAppBtn" class="bg-green-600 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+        Sobre o App
+      </button>
+    </div>
+  </header>
+
+  <div id="classificationControl" class="absolute top-20 left-12 bg-white p-4 rounded-lg shadow-lg z-50">
+    <label class="block text-gray-700 font-semibold mb-2">Classificação:</label>
+    <select id="classificationSelector" class="block w-full text-sm text-gray-700 p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+      <option value="2006">Cobertura do solo 2006</option>
+      <option value="2023">Cobertura do solo 2023</option>
+      <option value="transicao_cobertura">Classificação de transição 2006-2023</option>
+    </select>
+  </div>
+
+  <div id="map" class="relative"></div>
+
+  <div id="aboutAppModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Sobre o Aplicativo</h2>
+        <p class="text-gray-700 mb-4">
+        Este aplicativo foi desenvolvido para visualizar as mudanças na cobertura do solo ocorridas entre os anos de <strong>2006 e 2023</strong> na <strong>Floresta Estadual do Iriri</strong>, uma Unidade de Conservação de Uso Sustentável situada no sudoeste do Pará.
+        </p>
+        <p class="text-gray-700 mb-4">
+        Os dados foram extraídos da <strong>Coleção 6 do MapBiomas</strong>, via <a href="https://code.earthengine.google.com/" class="text-green-700 underline" target="_blank">Google Earth Engine</a>, e processados para representar três dimensões:
+        </p>
+        <ul class="list-disc list-inside text-gray-700 mb-4">
+        <li><strong>Cobertura do solo em 2006</strong></li>
+        <li><strong>Cobertura do solo em 2023</strong></li>
+        <li><strong>Classificação de transição</strong> (ex: Remanescente, Antropismo, Regeneração etc.)</li>
+        </ul>
+        <p class="text-gray-700 mb-4">
+        O objetivo é oferecer uma ferramenta simples e acessível para análise temporal da paisagem protegida, com base em dados públicos e metodologias replicáveis.
+        </p>
+        <hr class="my-4">
+        <p class="text-sm text-gray-600 mb-2">
+        Desenvolvido por <strong>Samuel C. Santos</strong> – Analista Ambiental e Desenvolvedor Web.
+        </p>
+        <p class="text-sm text-gray-600">
+        <a href="https://samuel-c-santos.github.io/" class="text-green-700 underline" target="_blank">🌐 Portfólio</a> |
+        <a href="https://www.linkedin.com/in/samuelsantos-amb/" class="text-green-700 underline" target="_blank">💼 LinkedIn</a> |
+        <a href="https://github.com/samuel-c-santos/iriri-landcover-2006-2023" class="text-green-700 underline" target="_blank">📁 Repositório no GitHub</a>
+        </p>
+      <button id="closeModalBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+        Fechar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Variáveis globais para o mapa e camadas
+    let map;
+    let geojsonLayer;
+    let currentClassification = '2006'; // Classificação inicial
+
+    // Definições de cores para Cobertura do Solo 2006/2023
+    const soilCoverColors = {
+      '3': '#006400',   // Formação Florestal
+      '6': '#BBFCAC',   // Áreas Naturais Inundáveis - Lenhosas (Bosque Inundável)
+      '11': '#45C2A5',  // Área Úmida (Campo Alagado e Área Pantanosa)
+      '12': '#B8AF4F',  // Campo Nativo (Formação Campestre)
+      '15': '#FFD966',  // Pastagem
+      '18': '#E974ED',  // Agricultura
+      '29': '#665A3A',  // Afloramento Rochoso
+      '33': '#0000FF'   // Rio, Lago e Oceano
+    };
+
+    // Nomes das classes para Cobertura do Solo 2006/2023 (usando os valores DN como chaves)
+    const soilCoverNames = {
+      '3': 'Formação Florestal',
+      '6': 'Áreas Naturais Inundáveis - Lenhosas (Bosque Inundável)',
+      '11': 'Área Úmida (Campo Alagado e Área Pantanosa)',
+      '12': 'Campo Nativo (Formação Campestre)',
+      '15': 'Pastagem',
+      '18': 'Agricultura',
+      '29': 'Afloramento Rochoso',
+      '33': 'Rio, Lago e Oceano'
+    };
+
+    // Definições de cores para Transição de Cobertura
+    const transitionColors = {
+      'Remanescente de vegetação nativa': '#228B22', // Verde médio
+      'Antropismo': '#FF6B6B',                     // Vermelho suave
+      'Antropismo consolidado': '#E974ED',         // Magenta
+      'Regeneração': '#4DB6AC'                     // Verde-água
+    };
+
+    // Nomes das classes para Transição de Cobertura
+    const transitionNames = {
+      'Remanescente de vegetação nativa': 'Remanescente de vegetação nativa',
+      'Antropismo': 'Antropismo (Natural → Antrópico)',
+      'Antropismo consolidado': 'Antropismo consolidado (Antrópico → Antrópico)',
+      'Regeneração': 'Regeneração (Antrópico → Natural)'
+    };
+
+    // Função para obter o estilo da feição com base na classificação selecionada
+    function getFeatureStyle(feature) {
+      let color;
+      let propertyValue;
+
+      if (currentClassification === '2006') {
+        // Usa o valor DN_2006 para buscar a cor
+        propertyValue = feature.properties.DN_2006;
+        color = soilCoverColors[propertyValue] || '#808080'; // Cinza para valores não mapeados
+      } else if (currentClassification === '2023') {
+        // Usa o valor DN_2023 para buscar a cor
+        propertyValue = feature.properties.DN_2023;
+        color = soilCoverColors[propertyValue] || '#808080'; // Cinza para valores não mapeados
+      } else if (currentClassification === 'transicao_cobertura') {
+        // Usa o valor de transicao_cobertura para buscar a cor
+        propertyValue = feature.properties.transicao_cobertura;
+        color = transitionColors[propertyValue] || '#808080'; // Cinza para valores não mapeados
+      }
+
+      return {
+        fillColor: color,
+        weight: 1,
+        opacity: 0.8,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+      };
+    }
+
+    // Função para criar o popup com todas as propriedades
+    function onEachFeature(feature, layer) {
+      const props = Object.entries(feature.properties)
+        .map(([k, v]) => `<strong class="text-green-700">${k}:</strong> <span class="text-gray-800">${v}</span>`)
+        .join('<br>');
+      layer.bindPopup(`<div class="p-2 text-sm">${props}</div>`);
+    }
+
+    // Função para carregar e exibir a camada GeoJSON
+    async function loadGeoJSONLayer() {
+      // Remove a camada existente se houver
+      if (geojsonLayer) {
+        map.removeLayer(geojsonLayer);
+      }
+
+      try {
+        // O caminho do arquivo GeoJSON é a raiz do app
+        const response = await fetch('flota_iriri_cobertura_solo_2006_2023.geojson');
+        if (!response.ok) {
+          throw new Error(`Erro ao carregar o GeoJSON: ${response.statusText}`);
+        }
+        const geojsonData = await response.json();
+
+        geojsonLayer = L.geoJSON(geojsonData, {
+          style: getFeatureStyle,
+          onEachFeature: onEachFeature
+        }).addTo(map);
+
+        // Ajusta o mapa para os limites da camada carregada
+        if (geojsonLayer.getBounds().isValid()) {
+          map.fitBounds(geojsonLayer.getBounds());
+        } else {
+          console.warn("Não foram encontrados limites válidos para as feições. O mapa não será ajustado.");
+        }
+        updateLegend(); // Atualiza a legenda após carregar a camada
+      } catch (error) {
+        console.error("Erro ao carregar o arquivo GeoJSON:", error);
+        showMessageBox("Erro ao carregar dados", "Não foi possível carregar o arquivo GeoJSON. Verifique se o arquivo 'flota_iriri_cobertura_solo_2006_2023.geojson' está na raiz do aplicativo.", "error");
+      }
+    }
+
+    // Função para atualizar a legenda do mapa
+    let legend;
+    function updateLegend() {
+      if (legend) {
+        map.removeControl(legend);
+      }
+
+      legend = L.control({ position: 'bottomright' });
+
+      legend.onAdd = function (map) {
+        const div = L.DomUtil.create('div', 'info legend bg-white p-4 rounded-lg shadow-lg');
+        let labels = [];
+        let categoriesMap; // Usará soilCoverNames ou transitionNames
+        let colorsMap;     // Usará soilCoverColors ou transitionColors
+
+        if (currentClassification === 'transicao_cobertura') {
+          categoriesMap = transitionNames;
+          colorsMap = transitionColors;
+        } else {
+          // Para 2006 e 2023, as chaves são os valores DN, e os nomes são os nomes das classes
+          categoriesMap = soilCoverNames;
+          colorsMap = soilCoverColors;
+        }
+
+        // Itera sobre o mapa de categorias (nomes) para construir a legenda
+        for (const key in categoriesMap) {
+            if (categoriesMap.hasOwnProperty(key)) {
+                const name = categoriesMap[key];
+                const color = colorsMap[key]; // Usa a mesma chave para obter a cor
+                labels.push(
+                    '<i style="background:' + color + '"></i> ' + name
+                );
+            }
+        }
+
+        div.innerHTML = '<strong>Legenda</strong><br>' + labels.join('<br>');
+        return div;
+      };
+
+      legend.addTo(map);
+    }
+
+    // Custom message box function (replaces alert)
+    function showMessageBox(title, message, type = "info") {
+        const existingMessageBox = document.getElementById('customMessageBox');
+        if (existingMessageBox) existingMessageBox.remove();
+
+        const messageBox = document.createElement('div');
+        messageBox.id = 'customMessageBox';
+        messageBox.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-xl z-[1001] flex flex-col items-center max-w-sm w-full';
+
+        let titleColor = 'text-blue-700';
+        if (type === 'error') {
+            titleColor = 'text-red-700';
+        } else if (type === 'success') {
+            titleColor = 'text-green-700';
+        }
+
+        messageBox.innerHTML = `
+            <h3 class="text-xl font-bold mb-3 ${titleColor}">${title}</h3>
+            <p class="text-gray-700 text-center mb-5">${message}</p>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+                OK
+            </button>
+        `;
+        document.body.appendChild(messageBox);
+
+        messageBox.querySelector('button').addEventListener('click', () => {
+            messageBox.remove();
+        });
+
+        if (type !== 'error') {
+            setTimeout(() => {
+                if (messageBox.parentNode) messageBox.remove();
+            }, 5000);
+        }
+    }
+
+    // Lógica principal do aplicativo, garantindo que o DOM e o Leaflet estejam prontos
+    window.onload = function() {
+      // Camadas base para o mapa
+      const baseLayers = {
+        "Google Satélite": L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' }),
+        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }),
+        "CartoDB Voyager": L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; CARTO' }),
+        "Sentinel-2 2024": L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2024_3857', format: 'image/jpeg', attribution: '© EOX IT Services' }),
+        "Bing Maps": L.tileLayer('http://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=1', { attribution: '&copy; Bing Maps', maxZoom: 19 })
+      };
+
+      // Inicializa o mapa Leaflet (atribui à variável global map)
+      map = L.map('map', {
+        center: [-3.13, -60.02], // Centro padrão para a região amazônica
+        zoom: 6,
+        layers: [baseLayers["Google Satélite"]] // Camada base padrão
+      });
+      L.control.layers(baseLayers).addTo(map); // Adiciona controle de camadas ao mapa
+
+      // Obtém elementos do DOM
+      const classificationSelector = document.getElementById('classificationSelector');
+      const aboutAppBtn = document.getElementById('aboutAppBtn');
+      const aboutAppModal = document.getElementById('aboutAppModal');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+
+      // Carrega a camada GeoJSON inicial
+      loadGeoJSONLayer();
+
+      // Event listener para a seleção de classificação
+      classificationSelector.addEventListener('change', (event) => {
+        currentClassification = event.target.value;
+        if (geojsonLayer) {
+          geojsonLayer.setStyle(getFeatureStyle); // Atualiza o estilo da camada
+          updateLegend(); // Atualiza a legenda
+        }
+      });
+
+      // Funcionalidade do modal "Sobre o App"
+      aboutAppBtn.addEventListener('click', () => {
+        aboutAppModal.classList.add('show');
+      });
+
+      closeModalBtn.addEventListener('click', () => {
+        aboutAppModal.classList.remove('show');
+      });
+
+      // Fecha o modal se clicado fora do conteúdo
+      aboutAppModal.addEventListener('click', (event) => {
+        if (event.target === aboutAppModal) {
+          aboutAppModal.classList.remove('show');
+        }
+      });
+    }; // Fim de window.onload
+  </script>
+</body>
+</html>
