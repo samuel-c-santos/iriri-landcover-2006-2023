@@ -43,38 +43,11 @@ Esse tratamento garantiu que as análises fossem espacialmente coerentes e seman
 
 ---
 
-### 🚀 Como executar localmente
-
-1. Clone o repositório:
-
-   ```bash
-   git clone https://github.com/samuel-c-santos/flota-iriri-app.git
-   cd flota-iriri-app
-   ```
-
-2. Certifique-se de que os arquivos estão na raiz:
-
-   * `index.html`
-   * `flota_iriri_cobertura_solo_2006_2023.geojson`
-   * `demo.png`
-
-3. Execute com servidor local (opcional):
-
-   ```bash
-   python3 -m http.server
-   # ou
-   npx serve
-   ```
-
-4. Acesse: [http://localhost:8000](http://localhost:8000)
-
----
-
 ### 🌐 Acesso Online
 
-Este app pode ser acessado diretamente via **GitHub Pages** (em breve):
+O aplicativo está disponível em:
 
-👉 `https://samuel-c-santos.github.io/flota-iriri-app/`
+👉 [https://samuel-c-santos.github.io/iriri-landcover-2006-2023/](https://samuel-c-santos.github.io/iriri-landcover-2006-2023/)
 
 ---
 
@@ -89,6 +62,6 @@ Este app pode ser acessado diretamente via **GitHub Pages** (em breve):
 
 ### 📁 Portfólio e Contato
 
-* 🌐 Portfólio: [https://samuel-c-santos.github.io/](https://samuel-c-santos.github.io/)
-* 💼 LinkedIn: [@samuelsantos-amb](https://www.linkedin.com/in/samuelsantos-amb/)
-* 📧 Contato: contato via LinkedIn ou portfólio
+- 🌐 Portfólio: [https://samuel-c-santos.github.io/](https://samuel-c-santos.github.io/)
+- 💼 LinkedIn: [@samuelsantos-amb](https://www.linkedin.com/in/samuelsantos-amb/)
+- 📧 Contato: [https://github.com/samuel-c-santos](https://github.com/samuel-c-santos)
